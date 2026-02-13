@@ -2,67 +2,163 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>高知県 定食マップ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>高知県 定食屋マップ</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  background:#f4f4f4;
+}
+
+header{
+  position:fixed;
+  top:0;
+  width:100%;
+  background:#198754;
+  color:white;
+  text-align:center;
+  padding:14px;
+  font-weight:bold;
+  z-index:1000;
+}
+
+#map{
+  position:absolute;
+  top:56px;
+  bottom:70px;
+  width:100%;
+}
+
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  width:100%;
+  height:70px;
+  background:white;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  box-shadow:0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.nav-btn{
+  color:#198754;
+  font-weight:bold;
+  font-size:14px;
+  text-align:center;
+  cursor:pointer;
+}
+
+.filter-btn{
+  position:fixed;
+  right:15px;
+  top:70px;
+  background:white;
+  padding:8px 14px;
+  border-radius:20px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.2);
+  font-size:13px;
+  cursor:pointer;
+}
+
+.leaflet-popup-content{
+  font-size:14px;
+}
+</style>
 </head>
+
 <body>
 
-<header>
-  <h1>🍱 高知県 定食マップ</h1>
-</header>
+<header>🍱 高知県 定食屋マップ</header>
 
 <div id="map"></div>
+<div class="filter-btn" onclick="cheapOnly()">¥1000以下</div>
+
+<div class="bottom-nav">
+  <div class="nav-btn" onclick="showAll()">すべて</div>
+  <div class="nav-btn" onclick="locateUser()">現在地</div>
+</div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="script.js"></script>
+
+<script>
+const map = L.map('map').setView([33.5597,133.5311], 12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+const shops = [
+  {
+    name:"食堂まるや（高知市）",
+    lat:33.5597,
+    lng:133.5311,
+    price:850,
+    desc:"日替わり定食が人気"
+  },
+  {
+    name:"市場食堂（高知市）",
+    lat:33.5665,
+    lng:133.5450,
+    price:1100,
+    desc:"カツオのたたき定食"
+  },
+  {
+    name:"四万十食堂（四万十市）",
+    lat:32.9910,
+    lng:132.9330,
+    price:950,
+    desc:"川エビ定食が名物"
+  },
+  {
+    name:"室戸海鮮食堂（室戸市）",
+    lat:33.2872,
+    lng:134.1526,
+    price:1200,
+    desc:"海鮮ミックス定食"
+  }
+];
+
+let markers = [];
+
+function render(filter=null){
+  markers.forEach(m=>map.removeLayer(m));
+  markers=[];
+
+  shops.forEach(shop=>{
+    if(filter && !filter(shop)) return;
+
+    const marker=L.marker([shop.lat,shop.lng])
+      .addTo(map)
+      .bindPopup(`
+        <strong>${shop.name}</strong><br>
+        ${shop.desc}<br>
+        💰 ${shop.price}円
+      `);
+
+    markers.push(marker);
+  });
+}
+
+function cheapOnly(){
+  render(shop=>shop.price<=1000);
+}
+
+function showAll(){
+  render();
+}
+
+function locateUser(){
+  map.locate({setView:true,maxZoom:15});
+}
+
+render();
+</script>
 
 </body>
 </html>
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f5f5f5;
-}
-
-header {
-  background: #2E8B57;
-  color: white;
-  padding: 16px;
-  text-align: center;
-  font-size: 18px;
-  position: fixed;
-  width: 100%;
-  z-index: 1000;
-}
-
-#map {
-  height: 100vh;
-  margin-top: 60px;
-}
-
-.leaflet-popup-content {
-  font-size: 14px;
-}
-
-const map = L.map('map').setView([33.5597, 133.5311], 13);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-fetch('data.json')
-  .then(response => response.json())
-  .then(data => {
-    data.forEach(shop => {
-      L.marker([shop.lat, shop.lng])
-        .addTo(map)
-        .bindPopup(`
-          <strong>${shop.name}</strong><br>
-          ${shop.description}
-        `);
-    });
-  });
